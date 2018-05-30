@@ -1,0 +1,17 @@
+import os
+lst = os.listdir('..\\test')
+f = os.system('javac Main.java')
+print('Compile: '+str(f))
+for f in lst:
+    res = os.system('java Main ..\\test\\'+f+' > ..\\test.pg')
+    print(res)
+    print('Testing '+f)
+    f0 = os.popen('java -jar ..\\spp.jar < ..\\test.pg')
+    print(f0.read())
+    fout = os.popen('java -jar ..\\pgi.jar < ..\\test.pg')
+    out = fout.read()
+    fans = os.popen('java -jar ..\\pgi.jar < ..\\test\\'+f)
+    ans = fans.read()
+    #print(ans)
+    #print(out)
+    print(out==ans)
