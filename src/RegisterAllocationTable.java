@@ -1,4 +1,8 @@
+import java.util.Enumeration;
+
 class RegisterAllocationTable {
+
+	public String loadto;
 
 	public void SetFunc(String string) {
 		// TODO Auto-generated method stub
@@ -10,12 +14,12 @@ class RegisterAllocationTable {
 		
 	}
 
-	public void setLabel(String string) {
+	public void SetLabel(String string) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void setArguNum(String string) {
+	public void SetArguNum(String string) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -41,6 +45,36 @@ class RegisterAllocationTable {
 	}
 
 	public void allocate() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public String getArguNum() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public Enumeration<String> TmpVars() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean isSpilled(String tmp) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public String getReg(String tmp) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void start() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void end() {
 		// TODO Auto-generated method stub
 		
 	}

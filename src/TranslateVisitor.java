@@ -11,7 +11,7 @@ import java.util.*;
  * Provides default methods which visit each node in the tree in depth-first
  * order.  Your visitors may extend this class.
  */
-public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
+public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
    //
    // Auto class visitors--probably don't need to be overridden.
    //
@@ -32,7 +32,14 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
          for ( Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) {
         	Node nd = e.nextElement();
             // nd.getClass() can be class syntaxtree.Procedure(Main)/Temp(Call)/NodeSequence(Stmt)
-            nd.accept(this,argu);
+        	if (nd.getClass().toString().equals("class syntaxtree.Temp")) {
+        		argu.loadto="t1";
+        		String reg = nd.accept(this,argu);
+        		if (_count<4)
+        			System.out.printf("\tMOVE a%d %s\n", _count, reg);
+        		else
+        			System.out.printf("\tPASSARG %d %s\n", _count-3, reg);
+        	}
             _count++;
          }
          return _ret;
@@ -43,9 +50,8 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
 
    public String visit(NodeOptional n, RegisterAllocationTable argu) {
       if ( n.present() ) {
-    	  argu.SetLabel(n.node.toString());
+    	  System.out.print(n.node.toString());
     	  return null;
-    	  //n.node.accept(this,argu);
       }
       else
          return null;
@@ -56,7 +62,6 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
       int _count=0;
       for ( Enumeration<Node> e = n.elements(); e.hasMoreElements(); ) {
          Node nd = e.nextElement();
-         argu.newStmt();
          nd.accept(this,argu);
          _count++;
       }
@@ -79,7 +84,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
    public String visit(Goal n, RegisterAllocationTable argu) {
       String _ret=null;
       argu.SetFunc("MAIN");
-      argu.SetArguNum("0");
+      System.out.println("MAIN "+argu.getArguNum());
       n.f1.accept(this, argu);
       n.f3.accept(this, argu);
       return _ret;
@@ -102,11 +107,27 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     * f4 -> StmtExp()
     */
    public String visit(Procedure n, RegisterAllocationTable argu) {
-      String _ret=null;
-      argu.SetFunc(n.f0.f0.toString());
-      argu.SetArguNum(n.f2.f0.toString());
+      String name=n.f0.f0.toString();
+      argu.SetFunc(name);
+      System.out.println(name+" "+argu.getArguNum());
+      argu.start();
+      /*
+      int i = 0;
+      for (Enumeration<String> e = argu.TmpVars(); e.hasMoreElements();) {
+    	  System.out.printf("\tASTORE SPILLEDARG %d %s\n",i,e.nextElement());
+    	  ++i;
+      }
+      */
       n.f4.accept(this, argu);
-      return _ret;
+      argu.end();
+      /*
+      i = 0;
+      for (Enumeration<String> e = argu.TmpVars(); e.hasMoreElements();) {
+    	  System.out.printf("\tALOAD %s SPILLEDARG %d\n",i,e.nextElement());
+    	  ++i;
+      }
+      */
+      return null;
    }
 
    /**
@@ -130,7 +151,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(NoOpStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      n.f0.accept(this, argu);
+      System.out.println("\tNOOP");
       return _ret;
    }
 
@@ -139,7 +160,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(ErrorStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      n.f0.accept(this, argu);
+      System.out.println("\tERROR");
       return _ret;
    }
 
@@ -150,8 +171,9 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(CJumpStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      n.f1.accept(this, argu);
-      argu.SetCJump(n.f2.f0.toString());
+      argu.loadto = "t0";
+      String reg = n.f1.accept(this, argu);
+      System.out.printf("\tCJUMP %s %s\n", reg, n.f2.f0.toString());
       return _ret;
    }
 
@@ -161,7 +183,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(JumpStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      argu.SetJump(n.f1.f0.toString());
+      System.out.printf("\tJUMP %s\n", n.f1.f0.toString());
       return _ret;
    }
 
@@ -173,8 +195,11 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(HStoreStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      n.f1.accept(this, argu);
-      n.f3.accept(this, argu);
+      argu.loadto="t0";
+      String reg1=n.f1.accept(this, argu);
+      argu.loadto="t1";
+      String reg3=n.f3.accept(this, argu);
+      System.out.printf("\tHSTORE %s %s %s\n", reg1, n.f2.f0.toString(), reg3);
       return _ret;
    }
 
@@ -186,8 +211,15 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(HLoadStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      argu.remove(n.f1.f1.f0.toString());
-      n.f2.accept(this, argu);
+      argu.loadto="t0";
+      String reg2=n.f2.accept(this, argu);
+      String tmp1 = n.f1.f1.f0.toString();
+      if (argu.isSpilled(tmp1)) {
+    	  System.out.printf("\tHLOAD %s %s %s\n", "t0", reg2, n.f3.f0.toString());
+    	  System.out.printf("\tASTORE %s t0\n", argu.getReg(tmp1));
+      }
+      else
+    	  System.out.printf("\tHLOAD %s %s %s\n", argu.getReg(tmp1), reg2, n.f3.f0.toString());
       return _ret;
    }
 
@@ -198,8 +230,11 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(MoveStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      argu.remove(n.f1.f1.f0.toString());
-      n.f2.accept(this, argu);
+      argu.loadto="t0";
+      String reg2=n.f2.accept(this, argu);
+      argu.loadto="t1";
+      String reg1=n.f1.accept(this, argu);
+      System.out.printf("\tMOVE %s %s\n", reg1, reg2);
       return _ret;
    }
 
@@ -209,7 +244,9 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     */
    public String visit(PrintStmt n, RegisterAllocationTable argu) {
       String _ret=null;
-      n.f1.accept(this, argu);
+      argu.loadto="t0";
+      String reg1=n.f1.accept(this, argu);
+      System.out.printf("\tPRINT %s\n",reg1);
       return _ret;
    }
 
@@ -220,9 +257,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     *       | SimpleExp()
     */
    public String visit(Exp n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f0.accept(this, argu);
-      return _ret;
+      return n.f0.accept(this, argu);
    }
 
    /**
@@ -235,8 +270,9 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
    public String visit(StmtExp n, RegisterAllocationTable argu) {
       String _ret=null;
       n.f1.accept(this, argu);
-      argu.newStmt();
-      n.f3.accept(this, argu);
+      argu.loadto="t0";
+      String ret=n.f3.accept(this, argu);
+      System.out.printf("\tMOVE v0 %s\n", ret);
       return _ret;
    }
 
@@ -248,10 +284,11 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     * f4 -> ")"
     */
    public String visit(Call n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f1.accept(this, argu);
+      argu.loadto="t0";
+      String reg1=n.f1.accept(this, argu);
       n.f3.accept(this, argu);
-      return _ret;
+      System.out.printf("\tCALL %s\n", reg1);
+      return "v0";
    }
 
    /**
@@ -259,9 +296,9 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     * f1 -> SimpleExp()
     */
    public String visit(HAllocate n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f1.accept(this, argu);
-      return _ret;
+      argu.loadto = "t0";
+      String reg=n.f1.accept(this, argu);
+      return String.format("HALLOCATE %s", reg);
    }
 
    /**
@@ -270,10 +307,11 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     * f2 -> SimpleExp()
     */
    public String visit(BinOp n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f1.accept(this, argu);
-      n.f2.accept(this, argu);
-      return _ret;
+      argu.loadto="t0";
+      String reg1=n.f1.accept(this, argu);
+      argu.loadto="t1";
+      String reg2=n.f2.accept(this, argu);
+      return String.format("%s %s %s", n.f0.f0.choice.toString(), reg1, reg2);
    }
 
    /**
@@ -294,9 +332,7 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     *       | Label()
     */
    public String visit(SimpleExp n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f0.accept(this, argu);
-      return _ret;
+      return n.f0.accept(this, argu);
    }
 
    /**
@@ -304,27 +340,26 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
     * f1 -> IntegerLiteral()
     */
    public String visit(Temp n, RegisterAllocationTable argu) {
-      String _ret=null;
-      argu.insert(n.f1.f0.toString());
-      return _ret;
+	  String name=n.f1.f0.toString();
+      if (argu.isSpilled(name)) {
+    	  System.out.printf("\tALOAD %s %s\n",argu.loadto, argu.getReg(name));
+    	  return argu.loadto;
+      }
+      return argu.getReg(name);
    }
 
    /**
     * f0 -> <INTEGER_LITERAL>
     */
    public String visit(IntegerLiteral n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f0.accept(this, argu);
-      return _ret;
+      return n.f0.toString();
    }
 
    /**
     * f0 -> <IDENTIFIER>
     */
    public String visit(Label n, RegisterAllocationTable argu) {
-      String _ret=null;
-      n.f0.accept(this, argu);
-      return _ret;
+      return n.f0.toString();
    }
 
 }
