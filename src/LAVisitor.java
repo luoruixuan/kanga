@@ -35,10 +35,10 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
             nd.accept(this,argu);
             _count++;
          }
-         return _ret;
+         return String.valueOf(_count);
       }
       else
-         return null;
+         return "0";
    }
 
    public String visit(NodeOptional n, RegisterAllocationTable argu) {
@@ -250,7 +250,8 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
    public String visit(Call n, RegisterAllocationTable argu) {
       String _ret=null;
       n.f1.accept(this, argu);
-      n.f3.accept(this, argu);
+      String argnum = n.f3.accept(this, argu);
+      argu.callFunc(Integer.valueOf(argnum));
       return _ret;
    }
 

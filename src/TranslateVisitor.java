@@ -12,6 +12,12 @@ import java.util.*;
  * order.  Your visitors may extend this class.
  */
 public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
+	boolean isReg(String s) {
+		if (s.length()!=2)
+			return false;
+		char c = s.charAt(0);
+		return c=='a' || c=='t' || c=='s' || c=='v';
+	}
    //
    // Auto class visitors--probably don't need to be overridden.
    //
@@ -40,6 +46,8 @@ public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTab
         		else
         			System.out.printf("\tPASSARG %d %s\n", _count-3, reg);
         	}
+        	else
+        		nd.accept(this,argu);
             _count++;
          }
          return _ret;
@@ -50,7 +58,8 @@ public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTab
 
    public String visit(NodeOptional n, RegisterAllocationTable argu) {
       if ( n.present() ) {
-    	  System.out.print(n.node.toString());
+    	  Label nd = (Label) n.node;
+    	  System.out.print(nd.f0.toString());
     	  return null;
       }
       else
@@ -86,6 +95,7 @@ public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTab
       argu.SetFunc("MAIN");
       System.out.println("MAIN "+argu.getArguNum());
       n.f1.accept(this, argu);
+      System.out.println("END");
       n.f3.accept(this, argu);
       return _ret;
    }
@@ -111,22 +121,9 @@ public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTab
       argu.SetFunc(name);
       System.out.println(name+" "+argu.getArguNum());
       argu.start();
-      /*
-      int i = 0;
-      for (Enumeration<String> e = argu.TmpVars(); e.hasMoreElements();) {
-    	  System.out.printf("\tASTORE SPILLEDARG %d %s\n",i,e.nextElement());
-    	  ++i;
-      }
-      */
       n.f4.accept(this, argu);
       argu.end();
-      /*
-      i = 0;
-      for (Enumeration<String> e = argu.TmpVars(); e.hasMoreElements();) {
-    	  System.out.printf("\tALOAD %s SPILLEDARG %d\n",i,e.nextElement());
-    	  ++i;
-      }
-      */
+      System.out.println("END");
       return null;
    }
 
@@ -232,9 +229,16 @@ public class TranslateVisitor extends GJDepthFirst<String, RegisterAllocationTab
       String _ret=null;
       argu.loadto="t0";
       String reg2=n.f2.accept(this, argu);
-      argu.loadto="t1";
-      String reg1=n.f1.accept(this, argu);
-      System.out.printf("\tMOVE %s %s\n", reg1, reg2);
+      String tmp1 = n.f1.f1.f0.toString();
+      if (argu.isSpilled(tmp1)) {
+    	  if (!isReg(reg2)) {
+    		  System.out.printf("\tMOVE t0 %s\n", reg2);
+    		  reg2="t0";
+    	  }
+    	  System.out.printf("\tASTORE %s %s\n", argu.getReg(tmp1), reg2);
+      }
+      else
+    	  System.out.printf("\tMOVE %s %s\n", argu.getReg(tmp1), reg2);
       return _ret;
    }
 

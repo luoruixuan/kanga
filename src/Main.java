@@ -20,6 +20,8 @@ public class Main{
 			LAVisitor V = new LAVisitor();
 			root.accept(V, RAT);
 			RAT.allocate();
+			TranslateVisitor TV = new TranslateVisitor();
+			root.accept(TV, RAT);
 		}catch (ParseException e){
 			e.printStackTrace();
 		}catch (TokenMgrError e){
