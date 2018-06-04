@@ -99,12 +99,12 @@ class RegisterAllocationTable {
 		}
 		if (f.argnum < 4) {
 			for (int i = 0; i < f.argnum; ++i) {
-				System.out.printf("\tMOVE %s a%d\n", f.arg_alloc.get(String.valueOf(i)), i);
+				System.out.printf("\tMOVE %s a%d\n", getReg(String.valueOf(i)), i);
 			}
 		}
 		else {
 			for (int i = 0; i < 4; ++i) {
-				System.out.printf("\tMOVE %s a%d\n", f.arg_alloc.get(String.valueOf(i)), i);
+				System.out.printf("\tMOVE %s a%d\n", getReg(String.valueOf(i)), i);
 			}
 			for (int i = 0; i < f.argnum-4; ++i) {
 				String s = f.arg_alloc.get(String.valueOf(i+4));
