@@ -160,7 +160,7 @@ class FuncSymbol {
 			}
 		}
 
-		for (int j = 0; j < maxj; ++j)
+		for (int j = 0; j <= maxj; ++j)
 			local.addElement("s"+String.valueOf(j));
 	}
 }
