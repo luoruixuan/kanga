@@ -4,7 +4,7 @@ class LivenessSet {
 	
 	public String next_lbl, next_lbl2;
 	public Hashtable<String, Integer> main_set; 
-	private Vector<String> var_remove_vec, var_insert_vec;
+	public Vector<String> var_remove_vec, var_insert_vec;
 	
 	LivenessSet () {
 		next_lbl =  null;

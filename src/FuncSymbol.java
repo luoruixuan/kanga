@@ -1,7 +1,7 @@
 import java.util.*;
 
 class FuncSymbol {
-	public int argnum;
+	public int argnum, extra_argnum;
 	public Vector<String> args;
 	public Hashtable<String, String> arg_alloc;
 	public int spilled;
@@ -30,9 +30,10 @@ class FuncSymbol {
 	
 	public void newStmt() {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
+		if (s.next_lbl == null) s.setNext("");
+		Stmts.setElementAt(s, stmt_idx);
 		stmt_idx += 1;
 		Stmts.addElement(new LivenessSet());
-		s.setNext("");
 	}
 	
 	public void setLabel(String s) {
@@ -42,21 +43,25 @@ class FuncSymbol {
 	public void setNext(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
 		s.setNext(str);
+		Stmts.setElementAt(s, stmt_idx);
 	}
 	
 	public void addNext(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
 		s.addNext(str);
+		Stmts.setElementAt(s, stmt_idx);
 	}
 	
 	public void addRemove(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
 		s.addRemove(str);
+		Stmts.setElementAt(s, stmt_idx);
 	}
 
 	public void addInsert(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
 		s.addInsert(str);
+		Stmts.setElementAt(s, stmt_idx);
 	}
 	
 	public void Iteration() {
@@ -107,6 +112,15 @@ class FuncSymbol {
 				if (!R.containsKey(var)) R.put(var, i);
 			}
 		}
+		/*
+		System.out.println(Stmts.elementAt(48).next_lbl.toString());
+		//System.out.println(Stmts.elementAt(16).next_lbl2.toString());
+		System.out.println(Stmts.elementAt(16).var_remove_vec.toString());
+		System.out.println(Stmts.elementAt(16).var_insert_vec.toString());
+		
+		System.out.println(L.toString());
+		System.out.println(R.toString());
+		*/
 		
 		Hashtable<String, String> alo_arg = new Hashtable<String, String>();
 		for (int i = 0; i < 8; ++i)
@@ -141,7 +155,7 @@ class FuncSymbol {
 				arg_alloc.put(var, "s"+String.valueOf(tmpj));
 			}
 			else {
-				arg_alloc.put(var, "SPILLEDARG "+String.valueOf(argnum+spilled));
+				arg_alloc.put(var, "SPILLEDARG "+String.valueOf(extra_argnum+spilled));
 				spilled++;
 			}
 		}

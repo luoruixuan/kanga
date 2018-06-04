@@ -55,16 +55,22 @@ class RegisterAllocationTable {
 	}
 
 	public void allocate() {
-		for (Enumeration<FuncSymbol> e=funcs.elements();e.hasMoreElements();) {
-			FuncSymbol f = e.nextElement();
+		Enumeration<String> e = funcs.keys();
+		while(e.hasMoreElements()) {
+			String func = e.nextElement();
+			FuncSymbol f = funcs.get(func);
 			f.Iteration();
+			//System.out.println(func);
 			f.getlocal();
 		}
 	}
 
 	public String getArguNum() {
 		FuncSymbol f = funcs.get(present_func);
-		return String.format("[%d][%d][%d]", f.argnum, f.argnum+f.spilled+f.local.size(), f.maxcall);
+		f.extra_argnum = 0;
+		if (f.argnum >= 4)
+			f.extra_argnum = f.argnum - 4;
+		return String.format("[%d][%d][%d]", f.argnum, f.extra_argnum+f.spilled+f.local.size(), f.maxcall);
 	}
 
 	public Enumeration<String> TmpVars() { 
@@ -79,14 +85,17 @@ class RegisterAllocationTable {
 
 	public String getReg(String name) {
 		FuncSymbol f = funcs.get(present_func);
-		return f.arg_alloc.get(name);
+		if (f.arg_alloc.get(name) == null)
+			return "t7";
+		else
+			return f.arg_alloc.get(name);
 	}
 
 	public void start() {
 		FuncSymbol f = funcs.get(present_func);
 		for (int i = 0; i < f.local.size(); ++i) {
 			String s = f.local.elementAt(i);
-			System.out.printf("\tASTORE SPILLEDARG %d %s\n", i+f.argnum+f.spilled, s);
+			System.out.printf("\tASTORE SPILLEDARG %d %s\n", i+f.extra_argnum+f.spilled, s);
 		}
 		if (f.argnum < 4) {
 			for (int i = 0; i < f.argnum; ++i) {
@@ -113,7 +122,7 @@ class RegisterAllocationTable {
 		FuncSymbol f = funcs.get(present_func);
 		for (int i=f.local.size()-1;i>=0;--i) {
 			String s = f.local.elementAt(i);
-			System.out.printf("\tALOAD %s SPILLEDARG %d\n", s, i+f.argnum+f.spilled);
+			System.out.printf("\tALOAD %s SPILLEDARG %d\n", s, i+f.extra_argnum+f.spilled);
 		}
 	}
 
