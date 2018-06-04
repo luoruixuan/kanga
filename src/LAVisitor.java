@@ -43,7 +43,8 @@ public class LAVisitor extends GJDepthFirst<String, RegisterAllocationTable> {
 
    public String visit(NodeOptional n, RegisterAllocationTable argu) {
       if ( n.present() ) {
-    	  argu.SetLabel(n.node.toString());
+    	  Label l = (Label)n.node;
+    	  argu.SetLabel(l.f0.toString());
     	  return null;
     	  //n.node.accept(this,argu);
       }

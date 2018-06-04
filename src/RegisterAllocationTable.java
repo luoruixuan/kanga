@@ -88,6 +88,25 @@ class RegisterAllocationTable {
 			String s = f.local.elementAt(i);
 			System.out.printf("\tASTORE SPILLEDARG %d %s\n", i+f.argnum+f.spilled, s);
 		}
+		if (f.argnum < 4) {
+			for (int i = 0; i < f.argnum; ++i) {
+				System.out.printf("\tMOVE %s a%d\n", f.arg_alloc.get(String.valueOf(i)), i);
+			}
+		}
+		else {
+			for (int i = 0; i < 4; ++i) {
+				System.out.printf("\tMOVE %s a%d\n", f.arg_alloc.get(String.valueOf(i)), i);
+			}
+			for (int i = 0; i < f.argnum-4; ++i) {
+				String s = f.arg_alloc.get(String.valueOf(i+4));
+				if (s.length()<4)
+					System.out.printf("\tALOAD %s SPILLEDARG %d\n", s, i);
+				else {
+					System.out.printf("\tALOAD t0 SPILLEDARG %d\n", i);
+					System.out.printf("\tASTORE %s t0\n", s);
+				}
+			}
+		}
 	}
 
 	public void end() {

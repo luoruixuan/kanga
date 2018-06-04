@@ -18,7 +18,9 @@ class FuncSymbol {
 		maxcall = 0;
 		
 		stmt_idx = 0;
+		Stmts = new Vector<LivenessSet>();
 		Stmts.addElement(new LivenessSet());
+		LabeltoStmtidx = new Hashtable<String, Integer>();
 	
 		args = new Vector<String>();
 		arg_alloc = new Hashtable<String, String>();
@@ -30,7 +32,7 @@ class FuncSymbol {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
 		stmt_idx += 1;
 		Stmts.addElement(new LivenessSet());
-		s.setNext(stmt_idx);
+		s.setNext("");
 	}
 	
 	public void setLabel(String s) {
@@ -39,12 +41,12 @@ class FuncSymbol {
 	
 	public void setNext(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
-		s.setNext(LabeltoStmtidx.get(str));
+		s.setNext(str);
 	}
 	
 	public void addNext(String str) {
 		LivenessSet s = Stmts.elementAt(stmt_idx);
-		s.addNext(LabeltoStmtidx.get(str));
+		s.addNext(str);
 	}
 	
 	public void addRemove(String str) {
@@ -60,14 +62,20 @@ class FuncSymbol {
 	public void Iteration() {
 		boolean cont_flag = true;
 		while(cont_flag) {
+			cont_flag = false;
 			int len = Stmts.size(); 
 			for (int i = len-1; i >= 0; --i) {
 				LivenessSet s = Stmts.elementAt(i);
 				LivenessSet s1 = null, s2 = null;
-				if (s.next_idx != -1)
-					s1 = Stmts.elementAt(s.next_idx);
-				if (s.next_idx2 != -1)
-					s2 = Stmts.elementAt(s.next_idx2);
+				int idx;
+				if (s.next_lbl != null) {
+					idx = s.next_lbl.equals("") ? i+1 : LabeltoStmtidx.get(s.next_lbl); 
+					s1 = Stmts.elementAt(idx);
+				}
+				if (s.next_lbl2 != null) {
+					idx = s.next_lbl2.equals("") ? i+1 : LabeltoStmtidx.get(s.next_lbl2);
+					s2 = Stmts.elementAt(idx);
+				}
 				cont_flag |= s.update(s1, s2);
 			}
 		}
@@ -103,18 +111,19 @@ class FuncSymbol {
 		Hashtable<String, String> alo_arg = new Hashtable<String, String>();
 		for (int i = 0; i < 8; ++i)
 			alo_arg.put("s"+String.valueOf(i), "-1");
-		
-		int maxj = -1, tmpj = -1;
+
+		int maxj = -1;
 		Enumeration<String> i = arrlist.elements(); 
 		while(i.hasMoreElements()) {
 			String var = i.nextElement();
 			int l = L.get(var);
+			int tmpj = -1;
 			for (int j = 0; j < 8; ++j) {
 				String alo_var = alo_arg.get("s"+String.valueOf(j));
 				if(alo_var.equals("-1")) {
-					maxj = j;
+					maxj = Math.max(maxj, j);
 					tmpj = -2;
-					alo_arg.put("s"+String.valueOf(tmpj), var);
+					alo_arg.put("s"+String.valueOf(j), var);
 					arg_alloc.put(var, "s"+String.valueOf(j));
 					break;
 				}
@@ -136,7 +145,7 @@ class FuncSymbol {
 				spilled++;
 			}
 		}
-		
+
 		for (int j = 0; j < maxj; ++j)
 			local.addElement("s"+String.valueOf(j));
 	}

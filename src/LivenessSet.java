@@ -2,21 +2,21 @@ import java.util.*;
 
 class LivenessSet {
 	
-	public int next_idx, next_idx2;
+	public String next_lbl, next_lbl2;
 	public Hashtable<String, Integer> main_set; 
 	private Vector<String> var_remove_vec, var_insert_vec;
 	
 	LivenessSet () {
-		next_idx = -1;
-		next_idx2 = -1;
+		next_lbl =  null;
+		next_lbl2 = null;
 		
 		var_remove_vec = new Vector<String> ();
 		var_insert_vec = new Vector<String> ();
 		main_set = new Hashtable<String, Integer>();
 	}
 	
-	void setNext(int idx) { next_idx = idx; }
-	void addNext(int idx) { next_idx2 = idx; }
+	void setNext(String str) { next_lbl = str; }
+	void addNext(String str) { next_lbl2 = str; }
 	
 	void addRemove(String str) {
 		var_remove_vec.addElement(str);
